@@ -1,0 +1,623 @@
+*{box-sizing:border-box}
+
+:root{
+  --glass:rgba(255,255,255,.78);
+  --line:rgba(255,255,255,.62);
+  --ink:#28364c;
+  --accent:#7b96bd;
+}
+
+html,body{
+  margin:0;
+  min-height:100%;
+  font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",system-ui,sans-serif;
+  color:var(--ink)
+}
+
+body{
+  padding:34px 20px 60px;
+  overflow-x:hidden
+}
+
+.backdrop{
+  position:fixed;
+  inset:0;
+  background:url("background.jpg") center/cover no-repeat;
+  z-index:-2
+}
+
+.backdrop:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(238,235,246,.34);
+  backdrop-filter:blur(1px)
+}
+
+.site-header{
+  text-align:center;
+  color:#fff;
+  text-shadow:0 2px 18px rgba(35,30,65,.65);
+  margin:5px auto 26px
+}
+
+.eyebrow{font-size:12px;letter-spacing:.28em;opacity:.9}
+
+h1{
+  margin:4px 0;
+  font-family:Georgia,"Times New Roman",serif;
+  letter-spacing:.12em;
+  font-size:clamp(28px,5vw,48px)
+}
+
+ .site-header p{margin:8px 0 0;font-size:14px}
+
+/* Discord告知：カードの世界観を崩さない、天族と魔族の中間色の案内バナー */
+.discord-banner{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  width:min(680px,100%);
+  margin:20px auto 0;
+  padding:12px 15px;
+  box-sizing:border-box;
+  text-decoration:none;
+  color:#f7f2f5;
+  background:linear-gradient(135deg,rgba(54,62,86,.78),rgba(72,43,69,.78));
+  border:1px solid rgba(221,205,216,.5);
+  border-radius:14px;
+  box-shadow:0 10px 28px rgba(22,19,34,.25),inset 0 1px 0 rgba(255,255,255,.14);
+  backdrop-filter:blur(10px);
+  overflow:hidden;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.discord-banner::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(137,159,198,.12),transparent 42%,rgba(166,93,125,.12));
+  pointer-events:none;
+}
+.discord-banner:hover{
+  transform:translateY(-2px);
+  border-color:rgba(232,220,230,.8);
+  box-shadow:0 14px 34px rgba(22,19,34,.32),inset 0 1px 0 rgba(255,255,255,.18);
+}
+.discord-emblem{
+  position:relative;
+  flex:0 0 38px;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(224,214,223,.55);
+  border-radius:50%;
+  color:#e6d7e0;
+  font-size:18px;
+  text-shadow:0 0 10px rgba(219,197,211,.5);
+}
+.discord-copy{
+  position:relative;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  text-align:left;
+}
+.discord-kicker{
+  font-size:9px;
+  letter-spacing:.18em;
+  font-weight:800;
+  color:#d8c8d4;
+}
+.discord-copy strong{
+  font-size:14px;
+  letter-spacing:.04em;
+  color:#fff;
+}
+.discord-copy span:last-child{
+  font-size:10px;
+  color:#e3dce2;
+}
+.discord-join{
+  position:relative;
+  margin-left:auto;
+  flex:0 0 auto;
+  padding:7px 10px;
+  border:1px solid rgba(224,214,223,.45);
+  border-radius:9px;
+  font-size:9px;
+  letter-spacing:.12em;
+  font-weight:900;
+  color:#fff;
+  background:rgba(255,255,255,.08);
+}
+.discord-join span{font-size:12px}
+
+.app{
+  width:min(1420px,100%);
+  margin:auto;
+  display:grid;
+  grid-template-columns:390px 1fr;
+  gap:22px;
+  align-items:start
+}
+
+.panel,.preview-panel{
+  background:var(--glass);
+  border:1px solid var(--line);
+  box-shadow:0 18px 55px rgba(31,31,64,.24);
+  backdrop-filter:blur(15px);
+  border-radius:20px
+}
+
+.form-panel{padding:20px}
+
+.race-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:18px
+}
+
+.race-btn{
+  border:1px solid #c5cfdd;
+  background:rgba(255,255,255,.65);
+  padding:12px;
+  border-radius:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s
+}
+
+.race-btn.active.elyos{
+  background:#eaf1fb;
+  border-color:#7e9ac5;
+  color:#365579
+}
+
+.race-btn.active.asmo{
+  background:#3a273c;
+  color:#f2cbd8;
+  border-color:#a56a83
+}
+
+.form-section{
+  border-top:1px solid rgba(73,89,111,.16);
+  padding-top:16px;
+  margin-top:16px
+}
+
+.form-section h2{
+  font-size:14px;
+  letter-spacing:.06em;
+  margin:0 0 13px
+}
+
+.grid{display:grid;gap:10px}
+.profile-grid{grid-template-columns:1fr 1fr}
+
+label{font-size:12px;font-weight:700}
+
+input[type=text],input:not([type]){width:100%}
+label input[type=text],label input:not([type]){display:block}
+
+input[type="text"],input:not([type]),input[type="radio"],input[type="checkbox"]{
+  accent-color:#728db5
+}
+
+.profile-grid input{
+  margin-top:6px;
+  border:1px solid #cbd3df;
+  border-radius:9px;
+  padding:9px 10px;
+  background:rgba(255,255,255,.8);
+  outline:none
+}
+
+.check-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:repeat(5,auto);
+  grid-auto-flow:column;
+  gap:9px 8px
+}
+
+.check-grid label,.time-grid label,.vc-row label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-weight:600
+}
+
+.check-grid input,.time-grid input{width:16px;height:16px}
+
+.vc-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:14px
+}
+
+.vc-row>span{font-weight:800;margin-right:auto}
+.vc-row label{font-size:15px}
+
+.time-block{margin-top:12px}
+.time-block h3{font-size:12px;margin:0 0 8px;color:#64738b}
+
+.time-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:4px
+}
+
+.time-grid label{
+  flex-direction:column;
+  font-size:10px;
+  font-weight:700;
+  padding:6px 2px;
+  border:1px solid transparent;
+  border-radius:8px
+}
+
+.time-grid label:has(input:checked){
+  background:rgba(117,142,184,.14);
+  border-color:rgba(117,142,184,.32)
+}
+
+.primary-btn{
+  width:100%;
+  border:0;
+  border-radius:12px;
+  padding:13px;
+  margin-top:18px;
+  font-weight:800;
+  cursor:pointer;
+  background:#526f9f;
+  color:#fff;
+  box-shadow:0 8px 22px rgba(82,111,159,.3)
+}
+
+.preview-panel{padding:16px;min-width:0}
+
+.preview-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#fff;
+  text-shadow:0 1px 8px rgba(20,20,40,.6);
+  margin:0 4px 10px
+}
+
+.preview-head span{font-size:13px;letter-spacing:.16em;font-weight:800}
+.preview-head small{font-size:11px}
+
+.card-wrap{
+  width:100%;
+  overflow:auto;
+  border-radius:12px
+}
+
+/* 画像そのものが1536×1024なので、カードも常に同じ比率で表示 */
+.friend-card{
+  container-type:inline-size;
+  position:relative;
+  width:100%;
+  aspect-ratio:1536 / 1024;
+  overflow:hidden;
+  background:#eee
+}
+
+.friend-card>img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:fill;
+  display:block
+}
+
+.overlay,.mark,.vc-mark{
+  position:absolute;
+  pointer-events:none;
+  z-index:2
+}
+
+/* 基本情報：画像内の罫線にぴったり合わせる */
+.overlay{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-weight:700;
+  color:#2f2730;
+  text-shadow:0 1px 4px rgba(255,255,255,.78);
+  line-height:1.2;
+}
+
+.overlay.name{
+  left:25.9%;
+  top:31.6%;
+  width:21.5%;
+  font-size:1.55cqw;
+}
+.overlay.server{
+  left:25.9%;
+  top:40.6%;
+  width:21.5%;
+  font-size:1.15cqw;
+}
+.overlay.legion{
+  left:25.9%;
+  top:45.4%;
+  width:21.5%;
+  font-size:1.15cqw;
+}
+.overlay.job{
+  left:25.9%;
+  top:50.1%;
+  width:21.5%;
+  font-size:1.15cqw;
+}
+
+/* 天族：基本情報の入力文字を画像内の「天族」と同じ水色に */
+.friend-card:not(.asmo-card) .overlay{
+  color:#365579;
+}
+
+
+/* 魔族プレビュー：基本情報の項目を魔族色に */
+.asmo-card .overlay{
+  color:#5E1751;
+}
+
+/* PLAY STYLE：画像に描かれている四角の中心へ直接チェックを置く */
+.mark{
+  display:none;
+  position:absolute;
+  align-items:center;
+  justify-content:center;
+  width:3.15%;
+  height:3.15%;
+  transform:translate(-50%,-50%);
+  color:#405f88;
+  font-weight:900;
+  font-size:1.65cqw;
+  line-height:1;
+  text-shadow:0 0 2px rgba(255,255,255,.8);
+}
+.mark.is-on{display:flex}
+
+/* 左列 */
+.play-story,.play-pve,.play-pvp,.play-gather,.play-money{left:14.2%}
+/* 右列 */
+.play-growth,.play-ss,.play-chat,.play-relax,.play-hard{left:31.12%}
+
+.play-story{top:63.77%}
+.play-pve{top:68.36%}
+.play-pvp{top:72.85%}
+.play-gather{top:77.44%}
+.play-money{top:82.03%}
+
+.play-growth{top:63.77%}
+.play-ss{top:68.36%}
+.play-chat{top:72.85%}
+.play-relax{top:77.44%}
+.play-hard{top:82.03%}
+
+/* VC：選択中の項目全体を囲むリングを重ねる */
+.vc-mark{
+  display:none;
+  position:absolute;
+  width:4.9cqw;
+  height:4.9cqw;
+  min-width:44px;
+  min-height:44px;
+  max-width:78px;
+  max-height:78px;
+  box-sizing:border-box;
+  transform:translate(-50%,-50%);
+  border:3px solid #4d6f9c;
+  border-radius:50%;
+  background:transparent;
+  box-shadow:0 0 0 1px rgba(255,255,255,.55), 0 0 5px rgba(255,255,255,.45);
+}
+.vc-mark.is-on{display:block}
+.vc-0{left:62.15%;top:36.2%}
+.vc-1{left:69.1%;top:36.2%}
+.vc-2{left:76.0%;top:36.2%}
+.vc-3{left:82.7%;top:36.2%}
+
+/* 活動時間：元画像のチェックボックス中央 */
+.weekday-morning,.weekday-noon,.weekday-evening,.weekday-night,.weekday-late,
+.holiday-morning,.holiday-noon,.holiday-evening,.holiday-night,.holiday-late{
+  width:2.8%;
+  height:3.2%;
+}
+
+.weekday-morning,.weekday-noon,.weekday-evening,.weekday-night,.weekday-late{top:61.33%}
+.holiday-morning,.holiday-noon,.holiday-evening,.holiday-night,.holiday-late{top:79.30%}
+
+.weekday-morning,.holiday-morning{left:56.25%}
+.weekday-noon,.holiday-noon{left:63.15%}
+.weekday-evening,.holiday-evening{left:69.73%}
+.weekday-night,.holiday-night{left:76.56%}
+.weekday-late,.holiday-late{left:83.40%}
+
+/* 活動時間のチェックは中心合わせ */
+.weekday-morning,.weekday-noon,.weekday-evening,.weekday-night,.weekday-late,
+.holiday-morning,.holiday-noon,.holiday-evening,.holiday-night,.holiday-late{
+  display:none;
+  position:absolute;
+  align-items:center;
+  justify-content:center;
+  transform:translate(-50%,-50%);
+  color:#6a3653;
+  font-size:1.45cqw;
+  font-weight:900;
+  line-height:1;
+  text-shadow:0 0 2px rgba(255,255,255,.8);
+}
+.weekday-morning.is-on,.weekday-noon.is-on,.weekday-evening.is-on,.weekday-night.is-on,.weekday-late.is-on,
+.holiday-morning.is-on,.holiday-noon.is-on,.holiday-evening.is-on,.holiday-night.is-on,.holiday-late.is-on{display:flex}
+
+/* 天族プレビュー：活動時間のチェックをPNG生成と同じ水色に */
+.friend-card:not(.asmo-card) .weekday-morning,
+.friend-card:not(.asmo-card) .weekday-noon,
+.friend-card:not(.asmo-card) .weekday-evening,
+.friend-card:not(.asmo-card) .weekday-night,
+.friend-card:not(.asmo-card) .weekday-late,
+.friend-card:not(.asmo-card) .holiday-morning,
+.friend-card:not(.asmo-card) .holiday-noon,
+.friend-card:not(.asmo-card) .holiday-evening,
+.friend-card:not(.asmo-card) .holiday-night,
+.friend-card:not(.asmo-card) .holiday-late{
+  color:#405f88;
+}
+
+/* 魔族プレビュー：プレイスタイルのチェックを魔族PNG生成と同じ色に */
+.asmo-card .mark{
+  color:#6a3653;
+}
+.asmo-card .vc-mark{
+  border-color:#6c3658;
+}
+
+@media(max-width:1050px){
+  .app{
+    grid-template-columns:1fr
+  }
+  .form-panel{order:2}
+  .preview-panel{order:1}
+}
+
+@media(max-width:600px){
+  body{padding:18px 10px 35px}
+  .profile-grid{grid-template-columns:1fr}
+  .site-header{margin-bottom:16px}
+  .site-header p{font-size:12px}
+  .discord-banner{
+    gap:10px;
+    margin-top:14px;
+    padding:10px 11px;
+    border-radius:12px;
+  }
+  .discord-emblem{flex-basis:32px;width:32px;height:32px;font-size:15px}
+  .discord-copy strong{font-size:12px}
+  .discord-copy span:last-child{font-size:9px}
+  .discord-join{padding:6px 7px;font-size:8px}
+  .preview-panel{padding:8px}
+
+  /* スマホのLIVE PREVIEWだけVCリングを小さくする。
+     PNG出力側のリングサイズは変更しない。 */
+  .vc-mark{
+    width:7.2cqw;
+    height:7.2cqw;
+    min-width:0;
+    min-height:0;
+    max-width:30px;
+    max-height:30px;
+    border-width:2px;
+  }
+}
+
+@media print{
+  body{padding:0;background:#fff}
+  .backdrop,.site-header,.form-panel,.preview-head{display:none!important}
+  .app,.preview-panel{
+    display:block;
+    width:100%;
+    padding:0;
+    margin:0;
+    background:none;
+    border:0;
+    box-shadow:none
+  }
+  .card-wrap{overflow:visible}
+  .friend-card{
+    width:100vw;
+    height:auto
+  }
+}
+
+/* =========================================================
+   魔族専用：魔族画像そのものから読み取った座標
+   天族の既存座標は変更せず、魔族だけ個別に上書きする
+   ========================================================= */
+
+/* 魔族・基本情報：天族は変更せず、魔族だけ少し下へ調整 */
+.asmo-card .overlay.name{left:25.65%;top:32.6%}
+.asmo-card .overlay.server{top:41.6%}
+.asmo-card .overlay.legion{top:46.4%}
+.asmo-card .overlay.job{top:51.1%}
+
+.asmo-card .play-story,
+.asmo-card .play-pve,
+.asmo-card .play-pvp,
+.asmo-card .play-gather,
+.asmo-card .play-money{
+  left:13.48%;
+}
+
+.asmo-card .play-growth,
+.asmo-card .play-ss,
+.asmo-card .play-chat,
+.asmo-card .play-relax,
+.asmo-card .play-hard{
+  left:30.86%;
+}
+
+.asmo-card .play-story,
+.asmo-card .play-growth{top:65.33%}
+.asmo-card .play-pve,
+.asmo-card .play-ss{top:70.12%}
+.asmo-card .play-pvp,
+.asmo-card .play-chat{top:74.80%}
+.asmo-card .play-gather,
+.asmo-card .play-relax{top:79.60%}
+.asmo-card .play-money,
+.asmo-card .play-hard{top:84.28%}
+
+/* 魔族VC：元画像の4つの円の中心 */
+.asmo-card .vc-0{left:62.76%;top:36.91%}
+.asmo-card .vc-1{left:69.73%;top:36.91%}
+.asmo-card .vc-2{left:76.69%;top:36.91%}
+.asmo-card .vc-3{left:83.66%;top:36.91%}
+
+/* 魔族・平日：5つのチェック欄の中心 */
+.asmo-card .weekday-morning,
+.asmo-card .weekday-noon,
+.asmo-card .weekday-evening,
+.asmo-card .weekday-night,
+.asmo-card .weekday-late{
+  top:62.79%;
+}
+.asmo-card .weekday-morning{left:56.38%}
+.asmo-card .weekday-noon{left:63.41%}
+.asmo-card .weekday-evening{left:70.25%}
+.asmo-card .weekday-night{left:77.02%}
+.asmo-card .weekday-late{left:83.92%}
+
+/* 魔族・休日：元画像では天族よりかなり下にある */
+.asmo-card .holiday-morning,
+.asmo-card .holiday-noon,
+.asmo-card .holiday-evening,
+.asmo-card .holiday-night,
+.asmo-card .holiday-late{
+  top:81.54%;
+}
+.asmo-card .holiday-morning{left:56.38%}
+.asmo-card .holiday-noon{left:63.41%}
+.asmo-card .holiday-evening{left:70.25%}
+.asmo-card .holiday-night{left:77.02%}
+.asmo-card .holiday-late{left:83.92%}
+
+
+/* PNG保存ボタン */
+.primary-btn:disabled{opacity:.65;cursor:wait}
+.save-note{margin:8px 0 0;text-align:center;font-size:11px;color:#64738b}
+@media(max-width:600px){
+  .primary-btn{font-size:15px;padding:15px 12px;min-height:50px}
+  .save-note{font-size:10px;line-height:1.5}
+}

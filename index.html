@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AION2 FRIEND CARD</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="backdrop"></div>
+
+  <header class="site-header">
+    <div class="eyebrow">AION2 COMMUNITY</div>
+    <h1>AION2 FRIEND CARD</h1>
+    <p>あなたのプレイスタイルから、気の合う仲間を見つけよう。</p>
+
+    <a class="discord-banner" href="https://discord.gg/xr9jzdZnj" target="_blank" rel="noopener noreferrer" aria-label="Discord AION2 天使と悪魔 仮 を開く">
+      <span class="discord-emblem" aria-hidden="true">◈</span>
+      <span class="discord-copy">
+        <span class="discord-kicker">DISCORD COMMUNITY</span>
+        <strong>AION2 天使と悪魔(仮)</strong>
+        <span>天族も魔族も関係ない、みんなの総合コミュニティ</span>
+      </span>
+      <span class="discord-join">JOIN <span aria-hidden="true">↗</span></span>
+    </a>
+  </header>
+
+  <main class="app">
+    <section class="panel form-panel">
+      <div class="race-tabs">
+        <button class="race-btn active elyos" data-race="elyos">🪽 天族</button>
+        <button class="race-btn asmo" data-race="asmodian">🌙 魔族</button>
+      </div>
+
+      <div class="form-section">
+        <h2>① PROFILE｜基本情報</h2>
+        <div class="grid profile-grid">
+          <label>名前<input id="name" placeholder="名前を入力"></label>
+          <label>サーバー<input id="server" placeholder="サーバー"></label>
+          <label>レギオン<input id="legion" placeholder="レギオン"></label>
+          <label>職業<input id="job" placeholder="職業"></label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>② PLAY STYLE｜遊びたいこと</h2>
+        <div class="check-grid">
+          <label><input type="checkbox" value="ストーリー" data-overlay="play-story"> ストーリー</label>
+          <label><input type="checkbox" value="PvE" data-overlay="play-pve"> PvE</label>
+          <label><input type="checkbox" value="PvP" data-overlay="play-pvp"> PvP</label>
+          <label><input type="checkbox" value="採取・制作" data-overlay="play-gather"> 採取・制作</label>
+          <label><input type="checkbox" value="金策" data-overlay="play-money"> 金策</label>
+          <label><input type="checkbox" value="装備・育成" data-overlay="play-growth"> 装備・育成</label>
+          <label><input type="checkbox" value="SS撮影" data-overlay="play-ss"> SS撮影</label>
+          <label><input type="checkbox" value="雑談" data-overlay="play-chat"> 雑談</label>
+          <label><input type="checkbox" value="のんびり" data-overlay="play-relax"> のんびり</label>
+          <label><input type="checkbox" value="がっつり攻略" data-overlay="play-hard"> がっつり攻略</label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2>③ COMMUNICATION｜交流スタイル</h2>
+        <div class="vc-row">
+          <span>VC</span>
+          <label><input type="radio" name="vc" value="◎" data-vc-index="0" checked> ◎</label>
+          <label><input type="radio" name="vc" value="○" data-vc-index="1"> ○</label>
+          <label><input type="radio" name="vc" value="△" data-vc-index="2"> △</label>
+          <label><input type="radio" name="vc" value="×" data-vc-index="3"> ×</label>
+        </div>
+
+        <div class="time-block">
+          <h3>平日</h3>
+          <div class="time-grid">
+            <label><input type="checkbox" class="weekday" value="朝" data-overlay="weekday-morning"> 朝</label>
+            <label><input type="checkbox" class="weekday" value="昼" data-overlay="weekday-noon"> 昼</label>
+            <label><input type="checkbox" class="weekday" value="夕方" data-overlay="weekday-evening"> 夕方</label>
+            <label><input type="checkbox" class="weekday" value="夜" data-overlay="weekday-night"> 夜</label>
+            <label><input type="checkbox" class="weekday" value="深夜" data-overlay="weekday-late"> 深夜</label>
+          </div>
+        </div>
+
+        <div class="time-block">
+          <h3>休日</h3>
+          <div class="time-grid">
+            <label><input type="checkbox" class="holiday" value="朝" data-overlay="holiday-morning"> 朝</label>
+            <label><input type="checkbox" class="holiday" value="昼" data-overlay="holiday-noon"> 昼</label>
+            <label><input type="checkbox" class="holiday" value="夕方" data-overlay="holiday-evening"> 夕方</label>
+            <label><input type="checkbox" class="holiday" value="夜" data-overlay="holiday-night"> 夜</label>
+            <label><input type="checkbox" class="holiday" value="深夜" data-overlay="holiday-late"> 深夜</label>
+          </div>
+        </div>
+      </div>
+
+      <button id="savePngBtn" class="primary-btn">🖼️ PNG画像を保存</button>
+      <p class="save-note">PCではPNGを直接ダウンロード、スマホでは共有メニューから写真やファイルへ保存できます。</p>
+    </section>
+
+    <section class="preview-panel">
+      <div class="preview-head">
+        <span>LIVE PREVIEW</span>
+        <small>入力内容がリアルタイムで反映されます</small>
+      </div>
+
+      <div class="card-wrap">
+        <div id="card" class="friend-card">
+          <img id="cardImage" src="elyos.png" data-asmodian-src="asmodian.png" alt="AION2 Friend Card">
+
+          <!-- 基本情報：カードの罫線位置に合わせて配置 -->
+          <div class="overlay name"></div>
+          <div class="overlay server"></div>
+          <div class="overlay legion"></div>
+          <div class="overlay job"></div>
+
+          <!-- 遊びたいこと：各チェックボックスを個別に反映 -->
+          <div class="mark play-story">✓</div>
+          <div class="mark play-pve">✓</div>
+          <div class="mark play-pvp">✓</div>
+          <div class="mark play-gather">✓</div>
+          <div class="mark play-money">✓</div>
+          <div class="mark play-growth">✓</div>
+          <div class="mark play-ss">✓</div>
+          <div class="mark play-chat">✓</div>
+          <div class="mark play-relax">✓</div>
+          <div class="mark play-hard">✓</div>
+
+          <!-- VC：4つの選択肢を個別に反映 -->
+          <div class="vc-mark vc-0"></div>
+          <div class="vc-mark vc-1"></div>
+          <div class="vc-mark vc-2"></div>
+          <div class="vc-mark vc-3"></div>
+
+          <!-- 平日 -->
+          <div class="mark weekday-morning">✓</div>
+          <div class="mark weekday-noon">✓</div>
+          <div class="mark weekday-evening">✓</div>
+          <div class="mark weekday-night">✓</div>
+          <div class="mark weekday-late">✓</div>
+
+          <!-- 休日 -->
+          <div class="mark holiday-morning">✓</div>
+          <div class="mark holiday-noon">✓</div>
+          <div class="mark holiday-evening">✓</div>
+          <div class="mark holiday-night">✓</div>
+          <div class="mark holiday-late">✓</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
