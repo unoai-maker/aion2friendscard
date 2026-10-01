@@ -14,7 +14,7 @@
     <h1>AION2 FRIEND CARD</h1>
     <p>あなたのプレイスタイルから、気の合う仲間を見つけよう。</p>
 
-    <a class="discord-banner" href="https://discord.gg/tSaHXj9fp" target="_blank" rel="noopener noreferrer" aria-label="Discord AION2 天使と悪魔 仮 を開く">
+    <a class="discord-banner" href="https://discord.gg/vW4E3vnyjv" target="_blank" rel="noopener noreferrer" aria-label="Discord AION2 天使と悪魔 仮 を開く">
       <span class="discord-emblem" aria-hidden="true">◈</span>
       <span class="discord-copy">
         <span class="discord-kicker">DISCORD COMMUNITY</span>
@@ -29,7 +29,7 @@
     <section class="panel form-panel">
       <div class="race-tabs">
         <button class="race-btn active elyos" data-race="elyos">🪽 天族</button>
-        <button class="race-btn asmo" data-race="asmodian">🌙 魔族</button>
+        <button class="race-btn asmo" data-race="asmodian">🦇 魔族</button>
       </div>
 
       <div class="form-section">
@@ -101,9 +101,27 @@
         <small>入力内容がリアルタイムで反映されます</small>
       </div>
 
+      <div class="ss-tools" aria-label="SS画像カスタマイズ">
+        <label class="ss-upload">📸 SSを追加<input id="ssUpload" type="file" accept="image/*"></label>
+        <button id="ssRemove" type="button" class="secondary-btn" disabled>画像を削除</button>
+        <label>サイズ <input id="ssScale" type="range" min="10" max="90" value="30" step="1"></label>
+        <label class="ss-shape-control">形状変更
+          <select id="ssShapeChange" aria-label="選択中のSSの形状変更">
+            <option value="">形状変更 ▼</option>
+            <option value="rectangle">□ 四角</option>
+            <option value="rounded">▢ 角丸</option>
+            <option value="circle">○ 丸</option>
+            <option value="heart">♥ ハート</option>
+            <option value="star">★ 星</option>
+          </select>
+        </label>
+        <small>追加したSSは複数枚配置できます。選択中の画像をドラッグして移動・サイズ調整。↻をドラッグすると回転できます。</small>
+      </div>
+
       <div class="card-wrap">
         <div id="card" class="friend-card">
           <img id="cardImage" src="elyos.png" data-asmodian-src="asmodian.png" alt="AION2 Friend Card">
+          <div id="ssLayer" aria-label="追加SSレイヤー"></div>
 
           <!-- 基本情報：カードの罫線位置に合わせて配置 -->
           <div class="overlay name"></div>
@@ -146,6 +164,25 @@
       </div>
     </section>
   </main>
+
+
+<div id="cropModal" class="crop-modal" hidden>
+  <div class="crop-dialog" role="dialog" aria-modal="true" aria-label="SS切り抜き編集">
+    <h3>SSの切り抜き範囲を選択</h3>
+    <p>画像上をドラッグして、残したい範囲を囲んでね。形状を選ぶと、その形で切り抜いて追加できます。</p>
+    <label class="crop-shape-control">切り抜き形状
+      <select id="cropShape">
+        <option value="rectangle">正方形・長方形</option>
+        <option value="rounded">角丸</option>
+        <option value="circle">丸</option>
+        <option value="heart">ハート</option>
+        <option value="star">星</option>
+      </select>
+    </label>
+    <canvas id="cropCanvas" width="720" height="480"></canvas>
+    <div class="crop-actions"><button id="cropCancel" type="button" class="secondary-btn">キャンセル</button><button id="cropApply" type="button" class="primary-btn">切り抜いて追加</button></div>
+  </div>
+</div>
 
   <script src="script.js"></script>
 </body>

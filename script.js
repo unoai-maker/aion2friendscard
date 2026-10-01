@@ -1,3 +1,4 @@
+// AION2 FRIEND CARD V47 - SS形状変更・再編集
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
@@ -8,6 +9,9 @@ let exportCache = { key: "", blob: null, file: null };
 let exportPromise = null;
 let exportTimer = null;
 let exportVersion = 0;
+const ssItems = [];
+let selectedSSIndex = -1;
+const getSelectedSS = () => ssItems[selectedSSIndex];
 
 const cardImage = $("#cardImage");
 const cardImageSources = {
@@ -47,7 +51,7 @@ function updateVC() {
 function getStateKey() {
   const checks = $$('input[type=checkbox]').map(x => x.checked ? "1" : "0").join("");
   const vc = $("input[name=vc]:checked")?.dataset.vcIndex || "0";
-  return [race, inputs.name.value, inputs.server.value, inputs.legion.value, inputs.job.value, checks, vc].join("\u001f");
+  return [race, inputs.name.value, inputs.server.value, inputs.legion.value, inputs.job.value, checks, vc, ssItems.map(item => [item.src, item.x, item.y, item.width, item.height, item.shape, item.rotation || 0]).flat().join("\u001e")].join("\u001f");
 }
 
 function invalidateExport() {
@@ -55,10 +59,53 @@ function invalidateExport() {
   exportCache = { key: "", blob: null, file: null };
 }
 
+function renderSSPreview() {
+  const layer = $("#ssLayer");
+  layer.replaceChildren();
+  ssItems.forEach((item, index) => {
+    const editor = document.createElement("div");
+    editor.className = "ss-editor shape-" + (item.shape || "rectangle") + (index === selectedSSIndex ? " is-selected" : "");
+    editor.dataset.index = String(index);
+    editor.style.left = `${item.x}%`;
+    editor.style.top = `${item.y}%`;
+    editor.style.width = `${item.width}%`;
+    editor.style.height = `${item.height}%`;
+    // 切り抜き形状と画像をひとまとまりとして回転。
+    // 調整枠・ハンドルは外側に残して、回転しても常に操作できるようにする。
+    editor.style.transform = `translate(-50%, -50%) rotate(${item.rotation || 0}deg)`;
+    const visual = document.createElement("div");
+    visual.className = "ss-visual shape-" + (item.shape || "rectangle");
+    const image = document.createElement("img");
+    image.className = "ss-image";
+    image.src = item.src;
+    image.alt = `追加したSS ${index + 1}`;
+    visual.appendChild(image);
+    editor.appendChild(visual);
+    ["nw","n","ne","e","se","s","sw","w"].forEach(handleName => {
+      const handle = document.createElement("span");
+      handle.className = "ss-handle " + handleName;
+      handle.dataset.handle = handleName;
+      editor.appendChild(handle);
+    });
+    const rotateHandle = document.createElement("span");
+    rotateHandle.className = "ss-rotate-handle";
+    rotateHandle.dataset.handle = "rotate";
+    rotateHandle.setAttribute("aria-label", "画像を回転");
+    editor.appendChild(rotateHandle);
+    layer.appendChild(editor);
+  });
+}
+
+function updateSSPreview() {
+  renderSSPreview();
+}
+
 function update() {
   updateProfile();
   updatePlayStyle();
   updateVC();
+  updateSSPreview();
+  refreshSSControls();
   invalidateExport();
   queueExport();
 }
@@ -76,6 +123,378 @@ function setRace(next) {
 Object.values(inputs).forEach(el => el.addEventListener("input", update));
 $$('input[type=checkbox], input[type=radio]').forEach(el => el.addEventListener("change", update));
 $$('.race-btn').forEach(btn => btn.addEventListener("click", () => setRace(btn.dataset.race)));
+
+const ssUpload = $("#ssUpload");
+const ssRemove = $("#ssRemove");
+const ssScale = $("#ssScale");
+const ssShapeChange = $("#ssShapeChange");
+const ssImage = $("#ssImage");
+function refreshSSControls() {
+  const item = getSelectedSS();
+  ssRemove.disabled = !item;
+  ssScale.disabled = !item;
+  if (item) { ssScale.value = Math.max(10, Math.min(90, Math.round(item.width))); }
+}
+const cropModal = $("#cropModal");
+const cropCanvas = $("#cropCanvas");
+const cropCtx = cropCanvas.getContext("2d");
+const cropCancel = $("#cropCancel");
+const cropApply = $("#cropApply");
+const cropShape = $("#cropShape");
+let cropImage = null;
+let cropRect = null;
+let cropDrag = null;
+let cropResize = null;
+let cropOriginalSrc = null;
+function openCropEditorForItem(item, shape){
+  if(!item) return;
+  // 形状変更では、現在の切り抜き結果ではなく「最初にアップロードした元画像」から再編集する。
+  // 旧データには originalSrc がないため、その場合だけ従来の baseSrc にフォールバック。
+  const src = item.originalSrc || item.baseSrc || item.src;
+  const image = new Image();
+  image.onload = () => {
+    cropImage = image;
+    const scale=Math.min(cropCanvas.width/image.width,cropCanvas.height/image.height);
+    const dw=image.width*scale, dh=image.height*scale;
+    cropRect={x:(cropCanvas.width-dw)/2,y:(cropCanvas.height-dh)/2,w:dw,h:dh};
+    cropDrag = null;
+    cropResize = null;
+    cropShape.value = shape || item.shape || "rectangle";
+    cropModal.hidden = false;
+    drawCropEditor();
+  };
+  image.src = src;
+}
+
+function drawCropEditor(){
+  if(!cropImage) return;
+  const scale=Math.min(cropCanvas.width/cropImage.width,cropCanvas.height/cropImage.height);
+  const dw=cropImage.width*scale, dh=cropImage.height*scale, ox=(cropCanvas.width-dw)/2, oy=(cropCanvas.height-dh)/2;
+  cropCtx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
+  cropCtx.fillStyle="#222";
+  cropCtx.fillRect(0,0,cropCanvas.width,cropCanvas.height);
+  cropCtx.drawImage(cropImage,ox,oy,dw,dh);
+  if(!cropRect){
+    const ratio=cropImage.width/cropImage.height;
+    let rw=dw*.8, rh=rw/ratio;
+    if(rh>dh*.8){ rh=dh*.8; rw=rh*ratio; }
+    cropRect={x:ox+(dw-rw)/2,y:oy+(dh-rh)/2,w:rw,h:rh};
+  }
+  const r=cropRect;
+  const shape=cropShape?.value || "rectangle";
+
+  // 選択範囲の外側を暗くし、選択した形状のプレビューを重ねる
+  cropCtx.fillStyle="rgba(0,0,0,.52)";
+  cropCtx.fillRect(0,0,cropCanvas.width,cropCanvas.height);
+  cropCtx.save();
+  clipSS(cropCtx, shape, r.x, r.y, r.w, r.h);
+  cropCtx.drawImage(cropImage,ox,oy,dw,dh);
+  cropCtx.restore();
+
+  cropCtx.save();
+  cropCtx.strokeStyle="#ff6bb5";
+  cropCtx.lineWidth=3;
+  drawShapePath(cropCtx, shape, r.x, r.y, r.w, r.h);
+  cropCtx.stroke();
+  cropCtx.restore();
+  // 8方向のサイズ調整ハンドル
+  const hs=7;
+  const pts=[
+    [r.x,r.y,"nw"],[r.x+r.w/2,r.y,"n"],[r.x+r.w,r.y,"ne"],
+    [r.x+r.w,r.y+r.h/2,"e"],[r.x+r.w,r.y+r.h,"se"],[r.x+r.w/2,r.y+r.h,"s"],
+    [r.x,r.y+r.h,"sw"],[r.x,r.y+r.h/2,"w"]
+  ];
+  cropCtx.save();
+  cropCtx.fillStyle="#fff"; cropCtx.strokeStyle="#ff6bb5"; cropCtx.lineWidth=2;
+  pts.forEach(([px,py])=>{cropCtx.beginPath();cropCtx.rect(px-hs,py-hs,hs*2,hs*2);cropCtx.fill();cropCtx.stroke();});
+  cropCtx.restore();
+}
+
+function drawShapePath(ctx, shape, x, y, width, height) {
+  ctx.beginPath();
+  if (shape === "circle") {
+    ctx.ellipse(x + width/2, y + height/2, width/2, height/2, 0, 0, Math.PI*2);
+  } else if (shape === "rounded") {
+    const radius=Math.min(width,height)*.16;
+    ctx.roundRect(x,y,width,height,radius);
+  } else if (shape === "heart") {
+    ctx.moveTo(x+width*.5,y+height*.92);
+    ctx.bezierCurveTo(x+width*.42,y+height*.80,x+width*.05,y+height*.58,x+width*.05,y+height*.30);
+    ctx.bezierCurveTo(x+width*.05,y+height*.05,x+width*.35,y,x+width*.5,y+height*.20);
+    ctx.bezierCurveTo(x+width*.65,y,x+width*.95,y+height*.05,x+width*.95,y+height*.30);
+    ctx.bezierCurveTo(x+width*.95,y+height*.58,x+width*.58,y+height*.80,x+width*.5,y+height*.92);
+    ctx.closePath();
+  } else if (shape === "star") {
+    const cx=x+width/2,cy=y+height/2;
+    const outerX=width/2,outerY=height/2,innerX=width*.21,innerY=height*.21;
+    for(let i=0;i<10;i++){
+      const a=-Math.PI/2+i*Math.PI/5;
+      const px=cx+Math.cos(a)*(i%2?innerX:outerX),py=cy+Math.sin(a)*(i%2?innerY:outerY);
+      if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+  } else {
+    ctx.rect(x,y,width,height);
+  }
+}
+
+function cropPoint(e){const r=cropCanvas.getBoundingClientRect();return {x:(e.clientX-r.left)*cropCanvas.width/r.width,y:(e.clientY-r.top)*cropCanvas.height/r.height};}
+function cropHandleAt(p){
+  if(!cropRect)return null;
+  const r=cropRect, hit=12;
+  const pts=[
+    [r.x,r.y,"nw"],[r.x+r.w/2,r.y,"n"],[r.x+r.w,r.y,"ne"],
+    [r.x+r.w,r.y+r.h/2,"e"],[r.x+r.w,r.y+r.h,"se"],[r.x+r.w/2,r.y+r.h,"s"],
+    [r.x,r.y+r.h,"sw"],[r.x,r.y+r.h/2,"w"]
+  ];
+  for(const [x,y,name] of pts) if(Math.abs(p.x-x)<=hit&&Math.abs(p.y-y)<=hit)return name;
+  return null;
+}
+function clampCropRect(r){
+  const min=12;
+  r.w=Math.max(min,r.w); r.h=Math.max(min,r.h);
+  r.x=Math.max(0,Math.min(cropCanvas.width-r.w,r.x));
+  r.y=Math.max(0,Math.min(cropCanvas.height-r.h,r.y));
+  return r;
+}
+cropCanvas.addEventListener("pointerdown",e=>{
+  const p=cropPoint(e);
+  const handle=cropHandleAt(p);
+  if(handle && cropRect){
+    cropResize={handle,startX:p.x,startY:p.y,rect:{...cropRect}};
+  } else if(cropRect && p.x>=cropRect.x&&p.x<=cropRect.x+cropRect.w&&p.y>=cropRect.y&&p.y<=cropRect.y+cropRect.h){
+    cropDrag={x:p.x,y:p.y,rect:{...cropRect},move:true};
+  } else {
+    cropDrag={x:p.x,y:p.y}; cropRect={x:p.x,y:p.y,w:0,h:0};
+  }
+  cropCanvas.setPointerCapture(e.pointerId);drawCropEditor();
+});
+function resizeCropRectWithRatio(handle, point, originalRect){
+  const o=originalRect;
+  const ratio=o.w/Math.max(1,o.h);
+  const hasW=handle.includes("w"), hasE=handle.includes("e");
+  const hasN=handle.includes("n"), hasS=handle.includes("s");
+  const isCorner=(hasW||hasE)&&(hasN||hasS);
+  if(!isCorner || !Number.isFinite(ratio) || ratio<=0) return null;
+
+  // Shift+角ドラッグでは、ドラッグ開始時点の切り抜き枠の比率を固定。
+  // 反対側の角をアンカーにして、現在の枠を縦横同時に拡縮する。
+  const anchorX=hasW ? o.x+o.w : o.x;
+  const anchorY=hasN ? o.y+o.h : o.y;
+  const rawW=Math.abs(point.x-anchorX);
+  const rawH=Math.abs(point.y-anchorY);
+
+  // カーソルの動きが大きい方向を基準にして、もう一方を比率から算出。
+  let w=Math.max(rawW, rawH*ratio);
+  let h=w/ratio;
+
+  // キャンバス外へはみ出さない最大サイズも、同じ比率のまま求める。
+  const maxW=(hasW ? anchorX : cropCanvas.width-anchorX);
+  const maxH=(hasN ? anchorY : cropCanvas.height-anchorY);
+  const maxRatioW=Math.min(maxW, maxH*ratio);
+  w=Math.min(w, maxRatioW);
+  h=w/ratio;
+
+  const x=hasW ? anchorX-w : anchorX;
+  const y=hasN ? anchorY-h : anchorY;
+  return clampCropRect({x,y,w,h});
+}
+
+cropCanvas.addEventListener("pointermove",e=>{
+  const p=cropPoint(e);
+  if(cropResize){
+    const d=cropResize, o=d.rect;
+    const ratioLocked=e.shiftKey && ["nw","ne","se","sw"].includes(d.handle);
+    if(ratioLocked){
+      cropRect=resizeCropRectWithRatio(d.handle,p,o) || cropRect;
+      drawCropEditor(); return;
+    }
+    let left=o.x,top=o.y,right=o.x+o.w,bottom=o.y+o.h;
+    if(d.handle.includes("w"))left=p.x; if(d.handle.includes("e"))right=p.x;
+    if(d.handle.includes("n"))top=p.y; if(d.handle.includes("s"))bottom=p.y;
+    cropRect=clampCropRect({x:Math.min(left,right),y:Math.min(top,bottom),w:Math.abs(right-left),h:Math.abs(bottom-top)}); drawCropEditor(); return;
+  }
+  if(!cropDrag)return;
+  if(cropDrag.move){
+    const o=cropDrag.rect,dx=p.x-cropDrag.x,dy=p.y-cropDrag.y;
+    cropRect=clampCropRect({x:o.x+dx,y:o.y+dy,w:o.w,h:o.h}); drawCropEditor(); return;
+  }
+  let dx=p.x-cropDrag.x,dy=p.y-cropDrag.y,w=Math.abs(dx),h=Math.abs(dy);
+  cropRect=clampCropRect({x:dx<0?cropDrag.x-w:cropDrag.x,y:dy<0?cropDrag.y-h:cropDrag.y,w,h});drawCropEditor();
+});
+cropCanvas.addEventListener("pointerup",()=>{cropDrag=null;cropResize=null;});
+cropShape.addEventListener("change",drawCropEditor);
+cropCancel.addEventListener("click",()=>{cropModal.hidden=true;cropImage=null;});
+cropApply.addEventListener("click",()=>{
+  if(!cropImage||!cropRect||cropRect.w<4||cropRect.h<4)return;
+  const scale=Math.min(cropCanvas.width/cropImage.width,cropCanvas.height/cropImage.height);const dw=cropImage.width*scale,dh=cropImage.height*scale,ox=(cropCanvas.width-dw)/2,oy=(cropCanvas.height-dh)/2;
+  const sx=Math.max(0,(cropRect.x-ox)/scale),sy=Math.max(0,(cropRect.y-oy)/scale),sw=Math.min(cropImage.width-sx,cropRect.w/scale),sh=Math.min(cropImage.height-sy,cropRect.h/scale);
+  const baseOut=document.createElement("canvas");
+  baseOut.width=Math.max(1,Math.round(sw));
+  baseOut.height=Math.max(1,Math.round(sh));
+  const baseCtx=baseOut.getContext("2d");
+  baseCtx.drawImage(cropImage,sx,sy,sw,sh,0,0,baseOut.width,baseOut.height);
+
+  const selectedShape=cropShape.value || "rectangle";
+  const shaped=document.createElement("canvas");
+  shaped.width=baseOut.width;
+  shaped.height=baseOut.height;
+  const shapedCtx=shaped.getContext("2d");
+  shapedCtx.save();
+  clipSS(shapedCtx, selectedShape, 0, 0, shaped.width, shaped.height);
+  shapedCtx.drawImage(baseOut,0,0);
+  shapedCtx.restore();
+
+  const editingIndex = Number.isInteger(window._editingSSIndex) ? window._editingSSIndex : -1;
+  if(editingIndex >= 0 && ssItems[editingIndex]){
+    const item=ssItems[editingIndex];
+    item.src=shaped.toDataURL("image/png");
+    item.baseSrc=baseOut.toDataURL("image/png");
+    // 切り抜き画面で見えていた縦横比を、そのままカード上の表示比率にも反映する。
+    // カード自体の比率(EXPORT_W:EXPORT_H)を考慮してheightを再計算することで、
+    // 切り抜き後に画像が縦/横へ引き伸ばされるのを防ぐ。
+    const cropRatio = sh / Math.max(1, sw);
+    item.height = item.width * cropRatio * (EXPORT_W / EXPORT_H);
+    // originalSrc は常に最初のアップロード画像を保持し、形状変更では上書きしない。
+    if(!item.originalSrc && cropOriginalSrc) item.originalSrc=cropOriginalSrc;
+    item.shape=selectedShape;
+    selectedSSIndex=editingIndex;
+  } else {
+    const item={src:shaped.toDataURL("image/png"),baseSrc:baseOut.toDataURL("image/png"),originalSrc:cropOriginalSrc || cropImage.src,x:50,y:50,width:Number(ssScale.value)||30,height:(Number(ssScale.value)||30)*(sh/Math.max(1,sw))*(EXPORT_W/EXPORT_H),shape:selectedShape,rotation:0};
+    ssItems.push(item);
+    selectedSSIndex=ssItems.length-1;
+  }
+  window._editingSSIndex=-1;
+  cropModal.hidden=true;
+  cropImage=null;
+  cropOriginalSrc=null;
+  cropShape.value="rectangle";
+  if(ssShapeChange) ssShapeChange.value="";
+  update();
+});
+ssShapeChange?.addEventListener("change",()=>{
+  const shape=ssShapeChange.value;
+  const item=getSelectedSS();
+  if(!shape || !item){
+    if(ssShapeChange) ssShapeChange.value="";
+    return;
+  }
+  window._editingSSIndex=selectedSSIndex;
+  openCropEditorForItem(item, shape);
+});
+
+ssUpload.addEventListener("change",()=>{
+  const file=ssUpload.files?.[0];if(!file||!file.type.startsWith("image/"))return;
+  const reader=new FileReader();reader.onload=()=>{
+    cropOriginalSrc=String(reader.result);
+    cropImage=new Image();
+    cropImage.onload=()=>{cropRect=null;window._editingSSIndex=-1;cropModal.hidden=false;drawCropEditor();};
+    cropImage.src=cropOriginalSrc;
+  };reader.readAsDataURL(file);ssUpload.value="";
+});
+ssRemove.addEventListener("click", () => {
+  if (selectedSSIndex < 0) return;
+  ssItems.splice(selectedSSIndex, 1);
+  selectedSSIndex = Math.min(selectedSSIndex, ssItems.length - 1);
+  update();
+});
+
+ssScale.addEventListener("input", () => {
+  const item = getSelectedSS();
+  if (!item) return;
+  const w = Number(ssScale.value); const ratio = item.height / Math.max(1, item.width);
+  item.width = w; item.height = w * ratio; update();
+});
+let ssInteraction = null;
+const ssLayer = $("#ssLayer");
+ssLayer.addEventListener("pointerdown", event => {
+  const editor = event.target.closest(".ss-editor");
+  if (!editor) return;
+  selectedSSIndex = Number(editor.dataset.index);
+  const item = getSelectedSS();
+  if (!item) return;
+  const handle = event.target.closest(".ss-handle, .ss-rotate-handle");
+  const rect = $("#card").getBoundingClientRect();
+  const mode = handle?.dataset.handle === "rotate" ? "rotate" : (handle ? "resize" : "move");
+  const cardRect = rect;
+  const centerX = cardRect.left + (item.x / 100) * cardRect.width;
+  const centerY = cardRect.top + (item.y / 100) * cardRect.height;
+  const startAngle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+  ssInteraction = { id:event.pointerId, mode, handle:handle?.dataset.handle || "", startX:event.clientX, startY:event.clientY, x:item.x, y:item.y, width:item.width, height:item.height, rotation:item.rotation || 0, centerX, centerY, startAngle };
+  editor.setPointerCapture(event.pointerId);
+  updateSSPreview();
+  event.preventDefault();
+});
+ssLayer.addEventListener("pointermove", event => {
+  if (!ssInteraction || ssInteraction.id !== event.pointerId) return;
+  const item = getSelectedSS(); if (!item) return;
+  const rect = $("#card").getBoundingClientRect();
+  const dx = (event.clientX-ssInteraction.startX)/rect.width*100;
+  const dy = (event.clientY-ssInteraction.startY)/rect.height*100;
+  if (ssInteraction.mode === "rotate") {
+    const angle = Math.atan2(event.clientY - ssInteraction.centerY, event.clientX - ssInteraction.centerX);
+    let delta = (angle - ssInteraction.startAngle) * 180 / Math.PI;
+    item.rotation = ssInteraction.rotation + delta;
+  } else if (ssInteraction.mode === "move") {
+    item.x = Math.max(0, Math.min(100, ssInteraction.x + dx));
+    item.y = Math.max(0, Math.min(100, ssInteraction.y + dy));
+  } else {
+    const h = ssInteraction.handle;
+    // 回転後もハンドルのドラッグ方向が画像のローカル軸に沿うよう補正。
+    const a = -(ssInteraction.rotation || 0) * Math.PI / 180;
+    const localDx = dx * Math.cos(a) - dy * Math.sin(a);
+    const localDy = dx * Math.sin(a) + dy * Math.cos(a);
+    let left = ssInteraction.x - ssInteraction.width/2, top = ssInteraction.y - ssInteraction.height/2;
+    let right = left + ssInteraction.width, bottom = top + ssInteraction.height;
+
+    const isCorner = ["nw","ne","se","sw"].includes(h);
+    const ratioLocked = event.shiftKey && isCorner;
+
+    if (ratioLocked) {
+      // Shift＋角ドラッグ：ドラッグ開始時点の現在のSS枠の比率を維持。
+      // 「ドラッグ量の絶対値」を使わず、元サイズからの増減量として扱う。
+      // これにより、角を内側へドラッグすると縮小、外側へドラッグすると拡大になる。
+      const ratio = ssInteraction.width / Math.max(0.001, ssInteraction.height);
+      const anchorX = h.includes("w") ? right : left;
+      const anchorY = h.includes("n") ? bottom : top;
+      const signX = h.includes("w") ? -1 : 1;
+      const signY = h.includes("n") ? -1 : 1;
+      const deltaW = localDx * signX;
+      const deltaH = localDy * signY;
+
+      // 横・縦のどちらのドラッグ量を基準にするかを、比率を考慮して決定。
+      // 元サイズに対する変化率が大きい方向を採用するので、拡大/縮小の向きが反転しない。
+      const widthCandidate = ssInteraction.width + deltaW;
+      const heightCandidate = ssInteraction.height + deltaH;
+      const widthScale = Math.abs(widthCandidate - ssInteraction.width) / Math.max(0.001, ssInteraction.width);
+      const heightScale = Math.abs(heightCandidate - ssInteraction.height) / Math.max(0.001, ssInteraction.height);
+      let w, hh;
+      if (widthScale >= heightScale) {
+        w = widthCandidate;
+        hh = w / ratio;
+      } else {
+        hh = heightCandidate;
+        w = hh * ratio;
+      }
+
+      // 最小サイズを下回った場合は、アンカー位置を保ったまま最小サイズに固定。
+      const minSize = 3;
+      w = Math.max(minSize, w);
+      hh = Math.max(minSize, w / ratio);
+      if (h.includes("w")) left = anchorX - w; else right = anchorX + w;
+      if (h.includes("n")) top = anchorY - hh; else bottom = anchorY + hh;
+    } else {
+      if (h.includes("w")) left += localDx; if (h.includes("e")) right += localDx;
+      if (h.includes("n")) top += localDy; if (h.includes("s")) bottom += localDy;
+    }
+    item.width = Math.max(3, right-left); item.height = Math.max(3, bottom-top);
+    item.x = (left+right)/2; item.y = (top+bottom)/2;
+  }
+  renderSSPreview(); refreshSSControls(); invalidateExport(); queueExport();
+});
+ssLayer.addEventListener("pointerup", () => { ssInteraction = null; });
+ssLayer.addEventListener("pointercancel", () => { ssInteraction = null; });
+refreshSSControls();
 
 function getCardState() {
   const isAsmo = race === "asmodian";
@@ -154,12 +573,15 @@ async function loadCanvasImage(src) {
     // On normal HTTP/HTTPS hosting, use the actual PNG file from the ZIP.
     // On file:// hosting, fetch() is blocked, so fall back to data generated
     // directly from the bundled PNG bytes.
-    if (location.protocol === "file:") {
+    if (location.protocol === "file:" && (src === cardImageSources.elyos || src === cardImageSources.asmodian)) {
+      // ZIPを直接展開して file:// で開いた場合は、カード画像だけ内蔵データを使う。
       const key = src === cardImageSources.asmodian ? "asmodian" : "elyos";
       src = bundledCanvasData[key];
+    } else if (src.startsWith("data:") || src.startsWith("blob:")) {
+      // ユーザーが追加したSSは data/blob URL のまま読み込む。
     } else {
       const response = await fetch(src, { cache: "no-store" });
-      if (!response.ok) throw new Error(`カード画像の取得に失敗しました: ${src}`);
+      if (!response.ok) throw new Error(`画像の取得に失敗しました: ${src}`);
       const blob = await response.blob();
       objectUrl = URL.createObjectURL(blob);
       src = objectUrl;
@@ -199,6 +621,29 @@ function drawText(ctx, text, x, y, size, opts = {}) {
   ctx.restore();
 }
 
+
+function clipSS(ctx, shape, x, y, width, height) {
+  ctx.beginPath();
+  if (shape === "circle") {
+    ctx.ellipse(x + width/2, y + height/2, width/2, height/2, 0, 0, Math.PI*2);
+  } else if (shape === "rounded") {
+    const r = Math.min(width, height) * 0.16;
+    ctx.roundRect(x, y, width, height, r);
+  } else if (shape === "heart") {
+    ctx.moveTo(x + width/2, y + height*0.92);
+    ctx.bezierCurveTo(x + width*0.42, y + height*0.80, x + width*0.05, y + height*0.58, x + width*0.05, y + height*0.30);
+    ctx.bezierCurveTo(x + width*0.05, y + height*0.05, x + width*0.35, y, x + width/2, y + height*0.20);
+    ctx.bezierCurveTo(x + width*0.65, y, x + width*0.95, y + height*0.05, x + width*0.95, y + height*0.30);
+    ctx.bezierCurveTo(x + width*0.95, y + height*0.58, x + width*0.58, y + height*0.80, x + width/2, y + height*0.92);
+  } else if (shape === "star") {
+    const cx=x+width/2, cy=y+height/2;
+    const outerX=width/2, outerY=height/2, innerX=width*.21, innerY=height*.21;
+    for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5; const px=cx+Math.cos(a)*(i%2?innerX:outerX), py=cy+Math.sin(a)*(i%2?innerY:outerY); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.closePath();
+  } else { ctx.rect(x,y,width,height); }
+  ctx.clip();
+}
+
 async function buildPngBlob() {
   if (document.fonts?.ready) await document.fonts.ready;
   const img = $("#cardImage");
@@ -216,6 +661,21 @@ async function buildPngBlob() {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(canvasImg, 0, 0, EXPORT_W, EXPORT_H);
+
+  for (const item of ssItems) {
+    const ssCanvasImg = await loadCanvasImage(item.src);
+    const width = item.width / 100 * EXPORT_W;
+    const height = item.height / 100 * EXPORT_H;
+    const x = item.x / 100 * EXPORT_W;
+    const y = item.y / 100 * EXPORT_H;
+    ctx.save();
+    // 切り抜き形状＋SS画像を同じ座標系で回転させる。
+    ctx.translate(x, y);
+    ctx.rotate((item.rotation || 0) * Math.PI / 180);
+    clipSS(ctx, item.shape || "rectangle", -width / 2, -height / 2, width, height);
+    ctx.drawImage(ssCanvasImg, -width / 2, -height / 2, width, height);
+    ctx.restore();
+  }
 
   for (const p of profile) {
     drawText(ctx, p.text, p.x / 100 * EXPORT_W, p.y / 100 * EXPORT_H + p.size, p.size, {
